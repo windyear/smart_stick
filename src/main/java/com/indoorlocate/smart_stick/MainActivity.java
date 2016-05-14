@@ -12,18 +12,31 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toolbar;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements View.OnClickListener {
     //声明一个数据库用于存储信息
     private SQLiteDatabase sms_db;
+    //声明所有控件
+    private Button bt_username_clear;
+    private Button bt_pwd_clear;
+    private Button bt_pwd_eye;
+    private Button mLoginButton,mLoginError,mRegister;
+    private EditText et_name, et_pass;
     private TextView sms_body;
+    private TextWatcher username_watcher;
+    private TextWatcher password_watcher;
     //用于显示短信内容
     private Uri SMS_INBOX=Uri.parse("content://sms/");
     //这里的只能接收到新发过来的短信
@@ -55,12 +68,94 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //获取toolbar
+        Toolbar toolbar= (Toolbar) findViewById(R.id.toolbar);
+        setActionBar(toolbar);
+        //获取所有空间对象以及设置监听事件
+        et_name = (EditText) findViewById(R.id.username);//登录名
+        et_pass = (EditText) findViewById(R.id.password);//密码
+        bt_username_clear = (Button)findViewById(R.id.bt_username_clear);//清除登录名
+        bt_pwd_clear = (Button)findViewById(R.id.bt_pwd_clear);//清除密码
+        bt_pwd_eye = (Button)findViewById(R.id.bt_pwd_eye);//显示密码
+        mLoginButton = (Button) findViewById(R.id.login);//登录
+        mLoginError  = (Button) findViewById(R.id.login_error);//忘记密码
+        mRegister    = (Button) findViewById(R.id.register);//注册
+        //注册事件
+        bt_username_clear.setOnClickListener(this);
+        bt_pwd_clear.setOnClickListener(this);
+        bt_pwd_eye.setOnClickListener(this);
+        mLoginButton.setOnClickListener(this);
+        mLoginError.setOnClickListener(this);
+        mRegister.setOnClickListener(this);
+        initWatcher();
+        //注册监视器
+        et_name.addTextChangedListener(username_watcher);
+        et_pass.addTextChangedListener(password_watcher);
+        //et_name.addTextChangedListener(username_watcher);
+        //et_pass.addTextChangedListener(password_watcher);
+        //ONLYTEST     = (Button) findViewById(R.id.registfer);
+        //ONLYTEST.setOnClickListener(this);
+        //ONLYTEST.setOnLongClickListener((OnLongClickListener) this);
+
+
         sms_body=(TextView)findViewById(R.id.sms_body);
         //动态注册广播
         IntentFilter intent = new IntentFilter("android.provider.Telephony.SMS_RECEIVED");
         registerReceiver(sms_Receiver, intent);
         //利用contentprovider直接读取系统中存储的信息
         //获取处理的对象
+    }
+
+    private void initWatcher() {
+        username_watcher = new TextWatcher() {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void beforeTextChanged(CharSequence s, int start, int count,int after) {}
+            public void afterTextChanged(Editable s) {
+                et_pass.setText("");
+                if(s.toString().length()>0){
+                    bt_username_clear.setVisibility(View.VISIBLE);
+                }else{
+                    bt_username_clear.setVisibility(View.INVISIBLE);
+                }
+            }
+        };
+
+        password_watcher = new TextWatcher() {
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void beforeTextChanged(CharSequence s, int start, int count,int after) {}
+            public void afterTextChanged(Editable s) {
+                if(s.toString().length()>0){
+                    bt_pwd_clear.setVisibility(View.VISIBLE);
+                }else{
+                    bt_pwd_clear.setVisibility(View.INVISIBLE);
+                }
+            }
+        };
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.titlebar_setting) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    //用于读取系统内部已经存储好的短信
+    public void recieve_sms(){
         ContentResolver cr=getContentResolver();
         //查询的字段，这里只是查询两个
         String[] projection = new String[] {"address", "body"};
@@ -79,35 +174,68 @@ public class MainActivity extends Activity {
             }
             cusor.close();
         }
+    }
+//创建、操作数据库的函数
+    public void createdb(){
         //下面进行对数据库的操作
         sms_db=SQLiteDatabase.openOrCreateDatabase(this.getFilesDir().toString()+"/my_sms",null);
         //创建一个表
-       // String sql="CREATE TABLE test1 if not exist(_id integer primary key AUTOINCREMENT,body text NOT NULL)";
+        // String sql="CREATE TABLE test1 if not exist(_id integer primary key AUTOINCREMENT,body text NOT NULL)";
         //sms_db.execSQL(sql);
         ContentValues sms1=new ContentValues();
         sms1.put("body","Hello world");
         sms_db.insert("test1",null,sms1);
-    }
-
+}
+//实现单击事件
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.login:  //登陆
+             login();
+                Log.v("msg","登录！");
+                break;
+            case R.id.login_error: //无法登陆(忘记密码了吧)
+                Log.v("msg","忘记密码！");
+//   Intent login_error_intent=new Intent();
+//   login_error_intent.setClass(LoginActivity.this, ForgetCodeActivity.class);
+//   startActivity(login_error_intent);
+                break;
+            case R.id.register:    //注册新的用户
+                Log.v("msg","注册新用户！");
+//   Intent intent=new Intent();
+//   intent.setClass(LoginActivity.this, ValidatePhoneNumActivity.class);
+//   startActivity(intent);
+                break;
+            case R.id.registfer:
+                //if(SERVER_FLAG>10){
+                    //Toast.makeText(this, "[内部测试--谨慎操作]", Toast.LENGTH_SHORT).show();
+                //}
+                //SERVER_FLAG++;
+                Log.v("msg","底部测试按钮");
+                break;
+            case R.id.bt_username_clear:
+                et_name.setText("");
+                et_pass.setText("");
+                break;
+            case R.id.bt_pwd_clear:
+                et_pass.setText("");
+                break;
+            case R.id.bt_pwd_eye:
+                if(et_pass.getInputType() == (InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD)){
+                    bt_pwd_eye.setBackgroundResource(R.drawable.see);
+                    et_pass.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_NORMAL);
+                }else{
+                    bt_pwd_eye.setBackgroundResource(R.drawable.see);
+                    et_pass.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                }
+                et_pass.setSelection(et_pass.getText().toString().length());
+                break;
         }
 
-        return super.onOptionsItemSelected(item);
+    }
+
+    private void login() {
+        Intent intent=new Intent(this,menu_Activity.class);
+        startActivity(intent);
     }
 }

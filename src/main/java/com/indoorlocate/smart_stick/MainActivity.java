@@ -1,12 +1,16 @@
 package com.indoorlocate.smart_stick;
 
 import android.app.Activity;
+import android.app.ActivityOptions;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -16,12 +20,15 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.Toolbar;
 
 
@@ -37,6 +44,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private TextView sms_body;
     private TextWatcher username_watcher;
     private TextWatcher password_watcher;
+    private EditText name;//注册时用户名
+    private EditText pw;//注册时密码
+    //用于存储密码
+    SharedPreferences sharedPreferences;
+    SharedPreferences.Editor editor;
     //用于显示短信内容
     private Uri SMS_INBOX=Uri.parse("content://sms/");
     //这里的只能接收到新发过来的短信
@@ -80,6 +92,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mLoginButton = (Button) findViewById(R.id.login);//登录
         mLoginError  = (Button) findViewById(R.id.login_error);//忘记密码
         mRegister    = (Button) findViewById(R.id.register);//注册
+        name= (EditText) findViewById(R.id.dl_name);//注册用户名
+        pw= (EditText) findViewById(R.id.dl_pw);//注册密码
         //注册事件
         bt_username_clear.setOnClickListener(this);
         bt_pwd_clear.setOnClickListener(this);
@@ -87,16 +101,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mLoginButton.setOnClickListener(this);
         mLoginError.setOnClickListener(this);
         mRegister.setOnClickListener(this);
+
         initWatcher();
         //注册监视器
         et_name.addTextChangedListener(username_watcher);
         et_pass.addTextChangedListener(password_watcher);
-        //et_name.addTextChangedListener(username_watcher);
-        //et_pass.addTextChangedListener(password_watcher);
         //ONLYTEST     = (Button) findViewById(R.id.registfer);
         //ONLYTEST.setOnClickListener(this);
         //ONLYTEST.setOnLongClickListener((OnLongClickListener) this);
-
 
         sms_body=(TextView)findViewById(R.id.sms_body);
         //动态注册广播
@@ -104,6 +116,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
         registerReceiver(sms_Receiver, intent);
         //利用contentprovider直接读取系统中存储的信息
         //获取处理的对象
+        //利用sharepereference存储数据
+        sharedPreferences=this.getSharedPreferences("password",Context.MODE_PRIVATE);
+        editor=sharedPreferences.edit();
+        //预先存储一组用户，用户名123，密码aaaa
+        editor.putString("123","aaaa");
+        editor.commit();
     }
 
     private void initWatcher() {
@@ -196,12 +214,60 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 break;
             case R.id.login_error: //无法登陆(忘记密码了吧)
                 Log.v("msg","忘记密码！");
+                LayoutInflater inflater = getLayoutInflater();
+                View layout = inflater.inflate(R.layout.dialog_layout, (ViewGroup) findViewById(R.id.dialog));
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("用户注册").setView(layout);
+                //确定按钮点击事件
+                builder.setPositiveButton("确定", new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        editor.putString(name.getText().toString(),pw.getText().toString());
+                        editor.commit();
+                        Toast.makeText(MainActivity.this, "注册成功", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                //    设置一个NegativeButton
+                builder.setNegativeButton("取消", new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        Toast.makeText(MainActivity.this, "已取消注册 " , Toast.LENGTH_SHORT).show();
+                    }
+                });
+                builder.show();
+                //确定按钮点击事件
+                builder.setPositiveButton("确定", new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        editor.putString(name.getText().toString(),pw.getText().toString());
+                        editor.commit();
+                        Toast.makeText(MainActivity.this, "注册成功", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                //    设置一个NegativeButton
+                builder.setNegativeButton("取消", new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        Toast.makeText(MainActivity.this, "已取消注册 " , Toast.LENGTH_SHORT).show();
+                    }
+                });
+                builder.show();
 //   Intent login_error_intent=new Intent();
 //   login_error_intent.setClass(LoginActivity.this, ForgetCodeActivity.class);
 //   startActivity(login_error_intent);
                 break;
             case R.id.register:    //注册新的用户
                 Log.v("msg","注册新用户！");
+                Intent intent=new Intent(this,register_Activity.class);
+                startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
 //   Intent intent=new Intent();
 //   intent.setClass(LoginActivity.this, ValidatePhoneNumActivity.class);
 //   startActivity(intent);
@@ -235,7 +301,18 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void login() {
+        String password=sharedPreferences.getString(et_name.getText().toString(),null);
+        if(password==null){
+            Log.v("msg","没有该用户，请重新输入");
+            et_name.setText("");
+            et_pass.setText("");
+        }
+       else if(password.equals(et_pass.getText().toString())){
         Intent intent=new Intent(this,menu_Activity.class);
-        startActivity(intent);
+        startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
+        }else{
+            Log.v("msg","密码错误，请重新输入密码");
+            et_pass.setText("");
+        }
     }
 }

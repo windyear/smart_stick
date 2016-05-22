@@ -14,8 +14,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="false"
         android:navigationIcon="@drawable/stick"
-        android:title="smart stick"
-        android:background="@android:color/holo_orange_light">
+        android:title="智能拐杖"
+        android:background="#ea553f">
         </Toolbar>
         <RelativeLayout
             android:id="@+id/login_layout"

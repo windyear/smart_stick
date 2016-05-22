@@ -9,11 +9,12 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.indoorlocate.smart_stick.menu_Activity">
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/imageView"
+
+    <android.support.v7.widget.RecyclerView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/recycler_view"
         android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/welcone"/>
+        android:layout_centerHorizontal="true"/>
 </RelativeLayout>

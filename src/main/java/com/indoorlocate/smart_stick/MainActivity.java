@@ -308,7 +308,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             et_pass.setText("");
         }
        else if(password.equals(et_pass.getText().toString())){
-        Intent intent=new Intent(this,menu_Activity.class);
+        Intent intent=new Intent(this,MainActivity_mainlayout.class);
         startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
         }else{
             Log.v("msg","密码错误，请重新输入密码");
